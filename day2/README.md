@@ -1,7 +1,9 @@
 ### Day 2
 These files emulate a half duplex UDP connection.
 
-Make sure to install socket module for python. It comes with every python installation by default. Due to any issues, if running the script displays the error message: "No module named socket" or something similar, install the module with the command `pip3 install socket`
+Make sure to install socket module for python. It comes with every python installation by default. Due to any issues, if running the script displays the error message: "No module named socket" or something similar, install the module with the command 
+
+`pip3 install socket`
 
 The word `oVeR` is used to shift the turns of being the sender and receiver.
 The word `QuiT` is used to end the current session of communication.
