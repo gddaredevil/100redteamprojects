@@ -20,7 +20,7 @@ __Redteaming__ is one of the most active fields of cyber security which contains
 
 |__Level 2__  | __Essential__ |
 |:----- |:----  |
-|Day 11 |	Simple port scanner|
+|11 |	Simple port scanner|
 |12| 	Port scanner with OS fingerprint using TTL (Time To Live)|
 |13| 	Port scanner with port footprint (HTTP? DNS? FTP? IRC?)|
 |14| 	Simple Web Directory brute-forcer (Threaded)|
