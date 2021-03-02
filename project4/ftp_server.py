@@ -6,6 +6,7 @@ import getpass
 authorizer = DummyAuthorizer()
 username=input()
 password=getpass.getpass()
+#Each letter in perm parameter signifies a specific functionality
 authorizer.add_user('username','password','.',perm='elradfmw')
 #authorizer.add_anonymous('os.getcwd()',perm='elradfmw')
 
