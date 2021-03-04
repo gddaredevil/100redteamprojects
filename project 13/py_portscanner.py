@@ -41,9 +41,10 @@ class port_scanner:
 if __name__=='__main__':
     if(len(sys.argv)<2):
         print("Invalid arguments")
-        print("Usage : python3 day12_port_scanner.py <ip_address>")
+        print("Usage : python3 py_portscanner.py <options> <ip_address>")
         print("Options:")
-        print(" -p  :   specify ports eg. 1-10, 40-100")
+        print(" -p \t : specify ports eg. 1-10, 40-100")
+        print(" -o \t : Enable OS detection")
         print("")
         sys.exit(1)
     args=list(sys.argv)
@@ -110,11 +111,12 @@ if __name__=='__main__':
         print("{}/tcp  \t Open \t {}".format(i,socket.getservbyport(i)))
 
     end_time=time.time()
-    print("\nTTL : {}".format(ttl))
-    if(ttl < 65):
-        print("Target Machine is running on Linux Distribution")
-    elif(ttl >= 65 and ttl < 129):
-        print("Target Machine is running on Windows Bases Distribution")
-    else:
-        print("Target Machine is running on Cisco")
+    if('-o' in args):
+        print("\nTTL : {}".format(ttl))
+        if(ttl < 65):
+            print("Target Machine is running on Linux Distribution")
+        elif(ttl >= 65 and ttl < 129):
+            print("Target Machine is running on Windows Bases Distribution")
+        else:
+            print("Target Machine is running on Cisco")
     print("\nScan completed in {:.2f} seconds".format(end_time-start_time))
