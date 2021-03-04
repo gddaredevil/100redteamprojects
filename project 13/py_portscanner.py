@@ -14,6 +14,8 @@ class port_scanner:
     def scan(self,ports):
         Hostname=socket.gethostbyname(self.ip)
         
+        if(ports.isdigit()):
+            ports=str(ports)+'-'+str(ports)
         ports = ports.split('-')
         initial_port = int(ports[0])
         final_port = int(ports[1])+1
@@ -37,8 +39,6 @@ class port_scanner:
             sys.exit(1)
         
 if __name__=='__main__':
-#    sys.stderr=open(os.devnull, "w")
-#    sys.stdout=open(os.devnull,"w")
     if(len(sys.argv)<2):
         print("Invalid arguments")
         print("Usage : python3 day12_port_scanner.py <ip_address>")
@@ -52,18 +52,13 @@ if __name__=='__main__':
     logging.basicConfig(format="   %(asctime)s : %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
     ip = args[-1]
-#    sys.stderr=open(os.devnull, "w")
-#    sys.stdout=open(os.devnull,"w")
+
     if('-o' in args):
-#        print(ip)
         icmp = IP(dst=ip)/ICMP()
         resp = bytes(sr1(icmp, timeout=10, verbose=0))
         ip_header = resp[0:20]
         iph = unpack("!BBHHHBBH4s4s",ip_header)
         ttl = iph[5]
-#        print("TTL : {}".format(ttl))
-#    sys.stderr=open(os.devnull, "w")
-#    sys.stdout=open(os.devnull,"w")
 
     if('-p' in args):
         ind=args.index('-p')
@@ -89,8 +84,6 @@ if __name__=='__main__':
     counter=0
     active_ports=[]
     while(port_ini<port_final):
-#        logging.info("Thread {}: Starting".format(index))
-#        print(port_ini)
         flag='create'
         counter+=1
         if(counter<200 and flag=='create'):
@@ -112,7 +105,6 @@ if __name__=='__main__':
     for index, thread in enumerate(threads):
         thread.join()
     active_ports=sorted(active_ports)
-#    print(active_ports)
     print(" PORT \t\t STATUS\tSERVICE ")
     for i in active_ports:
         print("{}/tcp  \t Open \t {}".format(i,socket.getservbyport(i)))
