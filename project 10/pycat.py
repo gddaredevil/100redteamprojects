@@ -8,8 +8,6 @@ class Netcat:
     def __init__(self, argv):
         self.noAg = len(argv)
         self.args = list(argv)
-#        print(self.noAg)
-#        print(self.args)
     def chat(self,ip,port,status):
         print("Chat Initiated")
         ins = tcp_connect(str(ip),str(port))
@@ -35,7 +33,6 @@ def getIP():
     except:
         return('127.0.0.1')
 def isAddress(arg):
-#    print(arg)
     numflag=0
     if(arg.count('.')==3):
         iplist=arg.split('.')
@@ -64,16 +61,15 @@ if __name__=='__main__':
 
     if(len(args) < 2):
         print("Usage:")
-        print("python3 netcat.py <options> host_address port")
+        print("python3 pycat.py <options> host_address port")
+        print(" -l -p <port>\t : listen on a particular port")
         print("")
         sys.exit(1)
 
-#    print(args[-1],args[-2])
     if('-l' not in args):
         if(isAddress(args[-2])):
             if(isPort(args[-1])):
                 instance.chat(str(args[-2]),str(args[-1]),'cli')
-#                tcp_connect(str(args[-2]),str(args[-1]))
             else:
                 print("Port error")
                 sys.exit(1)
@@ -85,25 +81,3 @@ if __name__=='__main__':
             if(isPort(args[-1])):
                 ip_ad=getIP()
                 instance.chat(str(ip_ad),str(args[-1]),'serv')
-
-
-#if(not file.isFlag(args[1])):
-#        if(args[1].count('.')==3):
-#        if(file.isAddress(args[1])):
-#            if(int(args[2]) > 1024 and int(args[2])<65535):
-#                file.chat()
-#                os.system('sudo python3 day4_tcp_multithreaded_chat_serv.py')
-#            else:
-#                print(" Port Error ")
-#                sys.exit(1)
-#        else:
-#            print(" IP address Error ")
-#            sys.exit(1)
-#    else:
-#        print("Supply arguments well")
-
-#Test run
-#    if(file.isFlag(args[3])):
-#        print("True")
-#    else:
-#        print("False")
