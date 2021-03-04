@@ -5,4 +5,4 @@ Anyways, building a tool from scratch lets us learn a lot of things.
 
 **Project 11, project 12 and project 13** are integrated into this project. This tool uses ICMP packet to detect TTL of the packet sent by the target.
 
-*Filtered ports can;t be identified with this port scanner*
+*Filtered ports can't be identified with this port scanner*
