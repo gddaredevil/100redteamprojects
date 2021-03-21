@@ -1,6 +1,5 @@
 import threading
 import urllib3
-import urllib as E
 import argparse
 import queue
 import sys
@@ -9,7 +8,6 @@ def wordlists(arg):
     with open(arg) as file:
         print("[*] Parsing Wordlist ...   [DONE]")
         wqueue = queue.Queue()
-#        wordlist = file.read().strip().split('\n')
         raw = file.readline()
         while(raw):
             word = raw.strip()
@@ -20,7 +18,6 @@ def wordlists(arg):
 def bruteforce(wq):
     while not wq.empty():
         word = wq.get()
-#        print(word)
         ext=['.php','.txt']
         if(args.r):
             if('.' not in word):
@@ -46,10 +43,6 @@ def bruteforce(wq):
                 if(response.status >=200 and response.status<300):
                     if('.' not in url.split('/')[-2] and '.' not in url.split('/')[-1]):
                         uq.put(url)
-#        except (E.URLError, E.HTTPError):
-#            if(hasattr(E.HTTPError,'code') and E.HTTPError.code !=404):
-#                print("!!!!! [{}] ==> {}".format(E.HTTPError.code, URL))
-#            pass
         except KeyboardInterrupt:
             print("Keyboard Interrupt detected. Quitting ...")
             sys.exit(1)
@@ -68,7 +61,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     wordlist = wordlists(args.path)
-#    target = "http://testphp.vulnweb.com"
     host = args.host
     uq.put(host)
     threads=[]
@@ -83,4 +75,3 @@ if __name__ == '__main__':
             t.start()
         for thread in threads:
             thread.join()
-#            print("Thread Joined")
