@@ -51,15 +51,16 @@ def connect(ip, port):
     rec.start()
 
 def portScan(ip, port):
+    global active_ports
+    active_ports={}
     start_time = time.time()
     socket.setdefaulttimeout(1)
     counter=0
-    inc=35
+    inc=50
     threads=[]
     flag="CREATE"
     port_ini=0
     port_fin=1024
-    print(port)
     if(port.isdigit() == False):
         try:
             arr = port.split('-')
@@ -91,14 +92,19 @@ def portScan(ip, port):
                 flag="DESTROY"
         elif(flag=="DESTROY"):
             for index,thread in enumerate(threads):
-                print("Thread {} is joining...".format(thread))
                 thread.join()
                 counter-=1
                 if(counter<=0):
                     flag="CREATE"
+                    threads=[]
     for index, thread in enumerate(threads):
         thread.join()
     end_time=time.time()
+    active_indices=sorted(active_ports)
+    for i in active_indices:
+        sen=str(i)+"/"+str(active_ports[i])
+        senx = sen.ljust(30)
+        print(senx,"Open")
     print("[^_^] Scan completed in {:.2f} seconds".format(end_time-start_time))
 def scan(ip,pini,pfin):
     for i in range(pini, pfin):
@@ -108,7 +114,8 @@ def scan(ip,pini,pfin):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             res=s.connect_ex((ip,i))
             if(res==0):
-                print("[*] Port {}/{} \t open".format(i,socket.getservbyport(i)))
+#                print("[*] Port {}/{} \t open".format(i,socket.getservbyport(i)))
+                active_ports[i]=socket.getservbyport(i)
             s.close()
         except KeyboardInterrupt:
             print("Keyboard Interrupt Detected. Exiting...")

@@ -64,6 +64,7 @@ def main():
 #    print(opts['host_address'], len(opts['host_address']))
     if(Connect):
         ip = opts['host_address'][0]
+        ip=socket.gethostbyname(ip)
         port = int(opts['port'])
         if(isIP(ip)):
             pycat_util.connect(ip,port)
@@ -74,7 +75,8 @@ def main():
     PortScan = True if opts['z']==True else False
     if(PortScan):
         port=opts['port']
-        ip = opts['host_address'][0] if isIP(opts['host_address'][0]) else None
+        ip=socket.gethostbyname(opts['host_address'][0])
+#        ip = opts['host_address'][0] if isIP(opts['host_address'][0]) else None
         if(ip):
             pycat_util.portScan(ip,port)
         else:
