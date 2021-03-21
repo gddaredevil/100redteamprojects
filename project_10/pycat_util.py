@@ -33,6 +33,7 @@ def listen(port):
     s.bind((ip, int(port)))
     s.listen(5)
     stat, conn = s.accept()
+    print("\U0001F609",end=" ")
     print('{} established a connection through port {}'.format(conn[0],conn[1]))
     sen = threading.Thread(target=send, args=(stat,), daemon=False)
     rec = threading.Thread(target=recv, args=(stat,), daemon=False)
