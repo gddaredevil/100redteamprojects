@@ -28,6 +28,7 @@ def argparser():
     parser.add_argument('-v', help="Verbose Output", action="store_true")
     parser.add_argument('-z', help="Zero I/O mode - Used for Scanning", action="store_true")
     args= vars(parser.parse_args())
+    print(args)
     return(args)
 
 def isIP(addr):
@@ -63,11 +64,16 @@ def main():
     Connect = True if opts['listen']==False and opts['z']==False and opts['host_address']!=[] else False
 #    print(opts['host_address'], len(opts['host_address']))
     if(Connect):
+        print(sys.stdin.isatty())
+        if(not sys.stdin.isatty()):
+            inp_file=sys.stdin.read()
+        else:
+            inp_file=None
         ip = opts['host_address'][0]
         ip=socket.gethostbyname(ip)
-        port = int(opts['port'])
+        port = int(opts['port']) if opts['port']!=None else 80
         if(isIP(ip)):
-            pycat_util.connect(ip,port)
+            pycat_util.connect(ip,inp_file,port)
         else:
             print("Invalid IP address")
 

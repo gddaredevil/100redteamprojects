@@ -28,6 +28,7 @@ def signal_handler(sign_recv, frame):
     print("Level 2")
 
 def listen(port):
+    print("Listening...")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip=getIP()
     s.bind((ip, int(port)))
@@ -41,15 +42,28 @@ def listen(port):
     sen.start()
     rec.start()
 
-def connect(ip, port):
+def connect(ip, inp_file, port=80):
     s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip,port))
-    print("Connection Successful")
-    sen = threading.Thread(target=send, args=(s,), daemon=False)
-    rec = threading.Thread(target=recv, args=(s,), daemon=False)
-
-    sen.start()
-    rec.start()
+    print("Connection Successful through port {}".format(port))
+#    if(s.recv(1024)):
+#        print(s.recv(1024).decode())
+    if(inp_file==None):
+        sen = threading.Thread(target=send, args=(s,), daemon=False)
+        rec = threading.Thread(target=recv, args=(s,), daemon=False)
+        print("Sending and Receiving Threads ready")
+        sen.start()
+        rec.start()
+    else:
+        s.send(inp_file.encode())
+        s.close()
+#        with open(inp_file,"w") as file:
+#            data=file.readline()
+#            while(data):
+#                data=file.readline()
+#                print(data)
+#                s.send(data)
+#            file.close()
 
 def portScan(ip, port):
     global active_ports
