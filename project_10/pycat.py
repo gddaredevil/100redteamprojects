@@ -18,6 +18,8 @@ def usage():
     print("Listen for connections: \t python3 pycat.py -l -p port [-options]..")
     print("-p \t port \t : Specify port for establishing a connection")
     print("-l \t listen \t: Listen for incoming connections")
+    print("-e \t execute \t: execute any given command in server through Client")
+    print("-q \t         \t: Specify number of seconds to open a session")
     print("-v \t Verbose \t : Display verbose output")
     print("-z \t Zero mode \t : Used for scanning ports")
     sys.exit(1)
