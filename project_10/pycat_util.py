@@ -1,46 +1,90 @@
 import socket
+import subprocess
+import os
 import threading
 import sys
 import logging
 import time
-from signal import signal
+import signal
 
 logging.basicConfig(format="    %(asctime)s : %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
-
+global INT_STAT
+INT_STAT="RUN"
 def getIP():
     try:
         return([l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0])
     except:
         return(socket.gethostbyname(socket.gethostname()))
 def send(s):
+    global INT_STAT
     while(True):
-        msg=input()
-        s.send(msg.encode())
-
+        try:
+            if(INT_STAT=="STOP"):
+                break
+            else:
+                msg=input()
+                s.send(msg.encode())
+        except:
+            sys.exit(1)
+            INT_STAT="STOP"
 def recv(s):
+    global INT_STAT
     while(True):
-        msg = s.recv(1024)
-        if not msg:
+        try:
+            if(INT_STAT =="STOP"):
+                break
+            else:
+                msg=s.recv(1024)
+            if(msg == b''):
+                raise RuntimeError("SOCKET Connection Broken...")
+                sys.exit(1)
+            print(msg.decode())
+        except:
+            sys.exit(1)
+            INT_STAT="STOP"
+
+def spawn(s):
+    print("Spawning a shell")
+    while(True):
+        s.send("<GD:#>".encode())
+        msg=s.recv(1024)
+        if(not msg):
             break
-        print(msg.decode())
-
-def signal_handler(sign_recv, frame):
-    print("Level 2")
-
-def listen(port):
-    print("Listening...")
+        try:
+            output=subprocess.check_output(msg, stderr=subprocess.STDOUT, shell=True)
+        except:
+            output="Failed to execute command...\n".encode()
+#        output=subprocess.run(msg, stderr=subprocess.STDOUT, shell=True, capture_output=False)
+#        print(output)
+        s.send(output)
+def Interrupt(signum, frame):
+    global INT_STAT
+    INT_STAT="STOP"
+def listen(port,fpath, qsec):
+#    print("Listening...")
+    if(qsec!=None):
+        signal.signal(signal.SIGALRM, Interrupt)
+        signal.alarm(qsec)
+#        print("ALARM SET")
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip=getIP()
     s.bind((ip, int(port)))
     s.listen(5)
     stat, conn = s.accept()
-    print("\U0001F609",end=" ")
-    print('{} established a connection through port {}'.format(conn[0],conn[1]))
-    sen = threading.Thread(target=send, args=(stat,), daemon=False)
-    rec = threading.Thread(target=recv, args=(stat,), daemon=False)
-#    sen.daemon=True#    rec.daemon=True
-    sen.start()
-    rec.start()
+    if(fpath==None):
+        print("\U0001F609",end=" ")
+        print('{} established a connection through port {}'.format(conn[0],conn[1]))
+        sen = threading.Thread(target=send, args=(stat,), daemon=False)
+        rec = threading.Thread(target=recv, args=(stat,), daemon=False)
+    #    sen.daemon=True#    rec.daemon=True
+        sen.start()
+        rec.start()
+#        sen.join()
+#        rec.join()
+    else:
+#        print("Spawning...")
+        rec=threading.Thread(target=spawn, args=(stat,),daemon=False)
+        rec.start()
 
 def connect(ip, inp_file, port=80):
     s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,12 +95,12 @@ def connect(ip, inp_file, port=80):
     if(inp_file==None):
         sen = threading.Thread(target=send, args=(s,), daemon=False)
         rec = threading.Thread(target=recv, args=(s,), daemon=False)
-        print("Sending and Receiving Threads ready")
+#        print("Sending and Receiving Threads ready")
         sen.start()
         rec.start()
     else:
         s.send(inp_file.encode())
-        s.close()
+#        s.close()
 #        with open(inp_file,"w") as file:
 #            data=file.readline()
 #            while(data):
@@ -64,6 +108,7 @@ def connect(ip, inp_file, port=80):
 #                print(data)
 #                s.send(data)
 #            file.close()
+#    print("COnnection ended...")
 
 def portScan(ip, port):
     global active_ports
@@ -142,5 +187,3 @@ def scan(ip,pini,pfin):
 #            print("Server not responding. Exiting...")
             print('')
             sys.exit(1)
-
-

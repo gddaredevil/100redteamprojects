@@ -3,12 +3,14 @@ import socket
 import threading
 import argparse
 import pycat_util
+import os
 from signal import signal
 
 #Global Variables
 Listen = False
 Connect= False
 PortScan=False
+Execute=False
 
 def usage():
     print("Usage:")
@@ -23,12 +25,14 @@ def usage():
 def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', dest='listen', help="Listen for incoming connections",action='store_true')
+    parser.add_argument('-e','--execute',help="Launches a specified script/program after connection")
+    parser.add_argument('-q', help="Specify number of seconds to keep the connection open")
     parser.add_argument('-p', '--port',help="specify port to listen on")
     parser.add_argument("host_address", nargs="*")
     parser.add_argument('-v', help="Verbose Output", action="store_true")
     parser.add_argument('-z', help="Zero I/O mode - Used for Scanning", action="store_true")
     args= vars(parser.parse_args())
-    print(args)
+#    print(args)
     return(args)
 
 def isIP(addr):
@@ -54,17 +58,27 @@ def main():
 
     #Listen
     Listen = True if opts['listen']==True else False
+    Execute= True if opts['execute']!=None else False
+    fpath=None
+    qsec=None
     if(Listen):
         if(opts['port'] == None):
             usage()
+        if(not Execute):
+            fpath=None
         else:
-            pycat_util.listen(opts['port'])
+            fpath=opts['execute']
+        if(opts['q']):
+            qsec=int(opts['q'])
+        else:
+            qsec=None
+        pycat_util.listen(opts['port'],fpath, qsec)
 
     #Connect
-    Connect = True if opts['listen']==False and opts['z']==False and opts['host_address']!=[] else False
+    Connect = True if opts['listen']==False and opts['execute']==None and opts['z']==False and opts['host_address']!=[] else False
 #    print(opts['host_address'], len(opts['host_address']))
+#    print(Connect)
     if(Connect):
-        print(sys.stdin.isatty())
         if(not sys.stdin.isatty()):
             inp_file=sys.stdin.read()
         else:
@@ -87,6 +101,10 @@ def main():
             pycat_util.portScan(ip,port)
         else:
             print("Invalid IP")
+
+#    Execute=True if opts['execute']!=None else False
+#    if(Execute):
+#        os.popen(opts['execute'])
 
 if __name__=='__main__':
     main()
