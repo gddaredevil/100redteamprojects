@@ -11,6 +11,7 @@ Listen = False
 Connect= False
 PortScan=False
 Execute=False
+Verbose= False
 
 def usage():
     print("Usage:")
@@ -31,7 +32,7 @@ def argparser():
     parser.add_argument('-q', help="Specify number of seconds to keep the connection open")
     parser.add_argument('-p', '--port',help="specify port to listen on")
     parser.add_argument("host_address", nargs="*")
-    parser.add_argument('-v', help="Verbose Output", action="store_true")
+    parser.add_argument('-v', '--verbose',help="Verbose Output", action="store_true")
     parser.add_argument('-z', help="Zero I/O mode - Used for Scanning", action="store_true")
     args= vars(parser.parse_args())
 #    print(args)
@@ -53,10 +54,13 @@ def main():
 
     global Listen   
     global Connect
+    global Verbose
 
     opts = argparser()
     if(len(sys.argv)<2):
         usage()
+
+    Verbose = True if opts['verbose'] == True else False
 
     #Listen
     Listen = True if opts['listen']==True else False
@@ -74,7 +78,11 @@ def main():
             qsec=int(opts['q'])
         else:
             qsec=None
-        pycat_util.listen(opts['port'],fpath, qsec)
+        if(os.fstat(0) == os.fstat(1)):
+            Verbose=True
+        else:
+            Verbose=False
+        pycat_util.listen(opts['port'],fpath, qsec, Verbose)
 
     #Connect
     Connect = True if opts['listen']==False and opts['execute']==None and opts['z']==False and opts['host_address']!=[] else False
@@ -89,7 +97,7 @@ def main():
         ip=socket.gethostbyname(ip)
         port = int(opts['port']) if opts['port']!=None else 80
         if(isIP(ip)):
-            pycat_util.connect(ip,inp_file,port)
+            pycat_util.connect(ip,inp_file,port, Verbose)
         else:
             print("Invalid IP address")
 
@@ -100,7 +108,7 @@ def main():
         ip=socket.gethostbyname(opts['host_address'][0])
 #        ip = opts['host_address'][0] if isIP(opts['host_address'][0]) else None
         if(ip):
-            pycat_util.portScan(ip,port)
+            pycat_util.portScan(ip,port, Verbose)
         else:
             print("Invalid IP")
 

@@ -7,6 +7,9 @@ import logging
 import time
 import signal
 
+global Verbose
+
+
 logging.basicConfig(format="    %(asctime)s : %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 global INT_STAT
 INT_STAT="RUN"
@@ -44,9 +47,9 @@ def recv(s):
             INT_STAT="STOP"
 
 def spawn(s):
-    print("Spawning a shell")
+#    print("Spawning a shell")
     while(True):
-        s.send("<GD:#>".encode())
+        s.send("<BASh:#>".encode())
         msg=s.recv(1024)
         if(not msg):
             break
@@ -60,20 +63,23 @@ def spawn(s):
 def Interrupt(signum, frame):
     global INT_STAT
     INT_STAT="STOP"
-def listen(port,fpath, qsec):
-#    print("Listening...")
+def listen(port,fpath, qsec, Verbose):
     if(qsec!=None):
         signal.signal(signal.SIGALRM, Interrupt)
         signal.alarm(qsec)
-#        print("ALARM SET")
+        if(Verbose):
+            print("Connection is established for {} seconds".format(qsec))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip=getIP()
     s.bind((ip, int(port)))
+    if(Verbose):
+        print("Listening at {}:{}".format(ip, port))
     s.listen(5)
     stat, conn = s.accept()
     if(fpath==None):
-        print("\U0001F609",end=" ")
-        print('{} established a connection through port {}'.format(conn[0],conn[1]))
+        if(Verbose):
+            print("\U0001F609",end=" ")
+            print('{} established a connection through port {}'.format(conn[0],conn[1]))
         sen = threading.Thread(target=send, args=(stat,), daemon=False)
         rec = threading.Thread(target=recv, args=(stat,), daemon=False)
     #    sen.daemon=True#    rec.daemon=True
@@ -82,14 +88,15 @@ def listen(port,fpath, qsec):
 #        sen.join()
 #        rec.join()
     else:
-#        print("Spawning...")
+        print("Spawning a Shell...")
         rec=threading.Thread(target=spawn, args=(stat,),daemon=False)
         rec.start()
 
-def connect(ip, inp_file, port=80):
+def connect(ip, inp_file, port, Verbose):
     s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((ip,port))
-    print("Connection Successful through port {}".format(port))
+    if(Verbose):
+        print("Connection Successful through port {}".format(port))
 #    if(s.recv(1024)):
 #        print(s.recv(1024).decode())
     if(inp_file==None):
@@ -110,7 +117,7 @@ def connect(ip, inp_file, port=80):
 #            file.close()
 #    print("COnnection ended...")
 
-def portScan(ip, port):
+def portScan(ip, port, Verbose):
     global active_ports
     active_ports={}
     start_time = time.time()
@@ -135,6 +142,9 @@ def portScan(ip, port):
     else:
         port_ini = int(port)
         port_fin = int(port)+1
+    if(Verbose):
+        print("Connection established with {}".format(socket.gethostbyname(ip)))
+        print("Scanning ports {}-{}\n".format(port_ini, port_fin-1))
     while(port_ini < port_fin):
         if(flag=="CREATE"):
             counter+=1
@@ -165,7 +175,8 @@ def portScan(ip, port):
         sen=str(i)+"/"+str(active_ports[i])
         senx = sen.ljust(30)
         print(senx,"Open")
-    print("[^_^] Scan completed in {:.2f} seconds".format(end_time-start_time))
+    if(Verbose):
+        print("\n[^_^] Scan completed in {:.2f} seconds".format(end_time-start_time))
 def scan(ip,pini,pfin):
     for i in range(pini, pfin):
         ip = socket.gethostbyname(ip)
@@ -185,5 +196,4 @@ def scan(ip,pini,pfin):
             sys.exit(1)
         except socket.error:
 #            print("Server not responding. Exiting...")
-            print('')
             sys.exit(1)
