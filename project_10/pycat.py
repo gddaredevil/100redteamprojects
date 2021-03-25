@@ -1,3 +1,4 @@
+#!/bin/python3
 import sys
 import socket
 import threading
@@ -78,9 +79,7 @@ def main():
             qsec=int(opts['q'])
         else:
             qsec=None
-        if(os.fstat(0) == os.fstat(1)):
-            Verbose=True
-        else:
+        if(os.fstat(0) != os.fstat(1)):
             Verbose=False
         pycat_util.listen(opts['port'],fpath, qsec, Verbose)
 
