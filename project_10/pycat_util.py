@@ -14,6 +14,7 @@ from base64 import b64encode, b64decode
 
 
 global block_size
+global reDirect
 
 logging.basicConfig(format="    %(asctime)s : %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 global INT_STAT
@@ -32,20 +33,33 @@ def diffieHellman(s):
     int_var = random.randint(low_lim, 200)
     var = (G**int_var)%P
     s.send((str(var)+":"+str(P)+":"+str(G)).encode())
-    recvar = (s.recv(1024)).decode()
+    buff =s.recv(1)
+    recvar=b""
+    while(buff):
+        if(b'\n' not in buff):
+            recvar+=buff
+            buff=s.recv(1)
+        else:
+#            buff=buff[:buff.index(b'\n')]
+            recvar+=buff
+            break
+    recvar = recvar.decode()
+#    print(recvar)
     key = (int(recvar)**int_var)%P
+#    print(key)
     return(key)
 
 def Diffiehellman(s):
     int_var = random.randint(1, 200)
-    rec_var = s.recv(2048).decode()
+    rec_var = s.recv(64).decode()
     rec_var = rec_var.split(':')
     P=int(rec_var[1])
     G=int(rec_var[2])
     recKey=int(rec_var[0])
     var = (G**int_var)%P
-    s.send(str(var).encode())
+    s.send((str(var)+"\n").encode())
     key=(int(recKey)**int_var)%P
+#    print(key)
     return(key)
 
 
@@ -57,9 +71,11 @@ def AESCipher(key):
 def padding(stat,text):
     global block_size
     if(stat=="pad"):
+#        print("Text : {}".format(text))
         bytes_to_pad= block_size - len(text) % block_size
         ascii_string = chr(bytes_to_pad)
         pad_str = str(ascii_string)*bytes_to_pad
+#        print("pad_str : {}".format(pad_str))
         final_str = text+pad_str
         return(final_str)
     elif(stat=="unpad"):
@@ -100,41 +116,125 @@ def send(s,key):
         except:
             sys.exit(1)
             INT_STAT="STOP"
-def recv(s,key):
+def recv(s,key, reDirect, outFile):
     key = AESCipher(key)
+    print(outFile)
     global INT_STAT
-    while(True):
-        try:
-            if(INT_STAT =="STOP"):
-                break
-            else:
+    if(reDirect==True):
+        if(1==1):
+            buff=b""
+#            print(buff)
+            msg=s.recv(1024)
+#            print(type(msg))
+#            print(msg)
+#            msg=msg.decode()
+            while(msg):
+#                print("Entered Loop")
+#                if(b'\n' not in msg):
+#                    buff+=msg
+#                else:
+#                    buff+= msg[:msg.index(b'\n')]
+#                    print(buff)
+#                    buff=msg[msg.index(b'\n'):]
+                buff=buff+msg
+#                print(buff)
                 msg=s.recv(1024)
-                msg = msg.decode()
-                msg = crypt("dec",msg,key)
-            if(msg == b''):
-                raise RuntimeError("SOCKET Connection Broken...")
-                sys.exit(1)
-            print(msg)
+#                print(msg)
+#            print(buff)
+            with open(outFile,"wb") as file:
+                file.write(buff)
+#            print(type(buffer))
+#            print(msg)
+#                msg=msg.decode()
+#                print(msg.decode(),end='')
+#                break
+#                enc=crypt("dec",msg,key)
+#                print(enc)
+#            while(True):
+#                print(type(msg))
+#                if(msg!=''):
+#                    if('\n' not in msg):
+#                        buffer+=msg
+#                    else:
+#                        buffer+=msg[:msg.index('\n')]
+#                        print(bytes(buffer))
+#    #                    print(type(buffer))
+#                        buffer=msg[msg.index('\n'):]
+#    #                msg=msg.decode()
+    #                    enc=crypt("dec",msg,key)
+    #                    buffer+=enc
+#                else:
+#                    break
+#                msg=s.recv(1024)
+#                print(type(msg))
+#                print(buffer)
+#        except:
+#                print("Error receiving the File")
+#            pass
+    else:
+        try:
+            while(True):
+                if(INT_STAT =="STOP"):
+                    break
+                else:
+                    msg=s.recv(1024)
+                    msg = msg.decode()
+                    msg = crypt("dec",msg,key)
+                if(msg == b''):
+                    raise RuntimeError("SOCKET Connection Broken...")
+                    sys.exit(1)
+                if(isinstance(msg, str)):
+                    msg=msg
+                elif(isinstance(msg, bytes)):
+                    msg=msg.decode()
+                print(msg)
         except:
             sys.exit(1)
             INT_STAT="STOP"
 
-def spawn(s):
-    while(True):
-        s.send("<BASh:#>".encode())
-        msg=s.recv(1024)
-        if(not msg):
-            break
-        try:
-            output=subprocess.check_output(msg, stderr=subprocess.STDOUT, shell=True)
-        except:
-            output="Failed to execute command...\n".encode()
+def spawn(s,fpath,key):
+    key=AESCipher(key)
+    if(os.path.exists(fpath)):
+        if('bash' not in fpath and 'cmd' not in fpath):
+            try:
+                output=(subprocess.check_output(fpath, stderr=subprocess.STDOUT, shell=True)).decode()
+            except subprocess.CalledProcessError as e:
+#                output=("command "+str(e.cmd)+" returned with error (code:"+str(e.returncode)+"):"+str(e.output)+"")
+                output=str(e.output.decode())
+#                raise RuntimeError("command {} returned with error (code:{}):{}".format(e.cmd, e.returncode, e.output))
+        else:
+            while(True):
+                msg=s.recv(1024)
+                msg=msg.decode()
+                msg= crypt("dec", msg, key)
+#                print("message : {}".format(msg))
+                if(not msg):
+                    break
+                try:
+                    output=subprocess.check_output(msg, stderr=subprocess.STDOUT, shell=True)
+                    output=output.decode()
+                except:
+                    output="Failed to execute command...\n"
 #        output=subprocess.run(msg, stderr=subprocess.STDOUT, shell=True, capture_output=False)
-        s.send(output)
+                output=crypt("enc",output, key)
+                s.send(output.encode())
+        output = crypt("enc", output, key)
+        s.send(output.encode())
+        s.shutdown(socket.SHUT_RDWR)
+        s.close()
+    else:
+        print("Invalid Path!!")
 def Interrupt(signum, frame):
     global INT_STAT
     INT_STAT="STOP"
-def listen(port,fpath, qsec, Verbose):
+
+
+def listen(port,fpath, qsec, Verbose, Redirect, outFile):
+    print(fpath)
+    if(Redirect == True):
+        reDirect=True
+    else:
+        reDirect=False
     if(qsec!=None):
         signal.signal(signal.SIGALRM, Interrupt)
         signal.alarm(qsec)
@@ -142,6 +242,7 @@ def listen(port,fpath, qsec, Verbose):
             print("Connection is established for {} seconds".format(qsec))
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip=getIP()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((ip, int(port)))
     if(Verbose):
         print("Listening at {}:{}".format(ip, port))
@@ -153,14 +254,15 @@ def listen(port,fpath, qsec, Verbose):
             print("\U0001F609",end=" ")
             print('{} established a connection through port {}'.format(conn[0],conn[1]))
         sen = threading.Thread(target=send, args=(stat,key,), daemon=False)
-        rec = threading.Thread(target=recv, args=(stat,key,), daemon=False)
+        rec = threading.Thread(target=recv, args=(stat,key,reDirect,outFile), daemon=False)
     #    sen.daemon=True
     #    rec.daemon=True
         sen.start()
         rec.start()
     else:
+        print(fpath)
         print("Spawning a Shell...")
-        rec=threading.Thread(target=spawn, args=(stat,),daemon=False)
+        rec=threading.Thread(target=spawn, args=(stat,fpath,key,),daemon=False)
         rec.start()
 
 def connect(ip, inp_file, port, Verbose):
@@ -171,11 +273,12 @@ def connect(ip, inp_file, port, Verbose):
     key=Diffiehellman(s)
     if(inp_file==None):
         sen = threading.Thread(target=send, args=(s,key,), daemon=False)
-        rec = threading.Thread(target=recv, args=(s,key,), daemon=False)
+        rec = threading.Thread(target=recv, args=(s,key,False, None), daemon=False)
         sen.start()
         rec.start()
     else:
-        s.send(inp_file.encode())
+        if(key):
+            s.send(inp_file)
 
 def portScan(ip, port, Verbose):
     global active_ports

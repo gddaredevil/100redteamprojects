@@ -31,6 +31,7 @@ def argparser():
     parser.add_argument('-l', dest='listen', help="Listen for incoming connections",action='store_true')
     parser.add_argument('-e','--execute',help="Launches a specified script/program after connection")
     parser.add_argument('-q', help="Specify number of seconds to keep the connection open")
+    parser.add_argument('-o', '--output', help="specify the name of output file")
     parser.add_argument('-p', '--port',help="specify port to listen on")
     parser.add_argument("host_address", nargs="*")
     parser.add_argument('-v', '--verbose',help="Verbose Output", action="store_true")
@@ -60,6 +61,7 @@ def main():
     opts = argparser()
     if(len(sys.argv)<2):
         usage()
+#    print(sys.stdin.isatty())
 
     Verbose = True if opts['verbose'] == True else False
 
@@ -68,7 +70,9 @@ def main():
     Execute= True if opts['execute']!=None else False
     fpath=None
     qsec=None
+    outFile=opts['output']
     if(Listen):
+#        print(sys.stdin.isatty())
         if(opts['port'] == None):
             usage()
         if(not Execute):
@@ -80,16 +84,20 @@ def main():
         else:
             qsec=None
         if(os.fstat(0) != os.fstat(1)):
+            Redirect=True
             Verbose=False
-        pycat_util.listen(opts['port'],fpath, qsec, Verbose)
+        else:
+            Redirect=False
+        pycat_util.listen(opts['port'],fpath, qsec, Verbose, Redirect,outFile)
 
     #Connect
     Connect = True if opts['listen']==False and opts['execute']==None and opts['z']==False and opts['host_address']!=[] else False
 #    print(opts['host_address'], len(opts['host_address']))
 #    print(Connect)
     if(Connect):
+#        print(sys.stdin.isatty())
         if(not sys.stdin.isatty()):
-            inp_file=sys.stdin.read()
+            inp_file=sys.stdin.buffer.read()
         else:
             inp_file=None
         ip = opts['host_address'][0]
