@@ -7,6 +7,7 @@ import logging
 import time
 import signal
 import random
+import datetime
 import hashlib
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -14,7 +15,6 @@ from base64 import b64encode, b64decode
 
 
 global block_size
-global reDirect
 
 logging.basicConfig(format="    %(asctime)s : %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 global INT_STAT
@@ -76,10 +76,13 @@ def padding(stat,text):
         ascii_string = chr(bytes_to_pad)
         pad_str = str(ascii_string)*bytes_to_pad
 #        print("pad_str : {}".format(pad_str))
-        final_str = text+pad_str
+        if(isinstance(text, str)):
+            final_str = text+pad_str
+        elif(isinstance(text, bytes)):
+            final_str=text+(pad_str.encode())
         return(final_str)
     elif(stat=="unpad"):
-        text=text.decode()
+#        text=text.decode()
         pad_char = text[-1]
         for i in range(1,len(text)):
             if(text[i]==pad_char):
@@ -92,14 +95,30 @@ def crypt(stat, text, key):
         padtxt = padding("pad",text)
         iv = Random.new().read(block_size)
         cipher = AES.new(key, AES.MODE_CBC, iv)
-        enc_text = cipher.encrypt(padtxt.encode())
+        if(isinstance(padtxt, str)):
+            enc_text = cipher.encrypt(padtxt.encode())
+        elif(isinstance(padtxt, bytes)):
+            enc_text = cipher.encrypt(padtxt)
         return(b64encode(iv+enc_text).decode("utf-8"))
     elif(stat=="dec"):
+        enc_text = b64decode(text)
+#        print(enc_text)
+#        print(" ")
+        iv = enc_text[:block_size]
+        cipher=AES.new(key, AES.MODE_CBC, iv)
+        padtxt = cipher.decrypt(enc_text[block_size:])
+#        print(padtxt)
+#        print(" ")
+#        print(type(padtxt))
+#        return(padtxt)
+        return(padding("unpad", padtxt))
+    elif(stat=="dec_out"):
         enc_text = b64decode(text)
         iv = enc_text[:block_size]
         cipher=AES.new(key, AES.MODE_CBC, iv)
         padtxt = cipher.decrypt(enc_text[block_size:])
-        return(padding("unpad", padtxt))
+        return(padtxt)
+
 
 
 def send(s,key):
@@ -116,19 +135,18 @@ def send(s,key):
         except:
             sys.exit(1)
             INT_STAT="STOP"
-def recv(s,key, reDirect, outFile):
+def recv(s,key, outFile):
     key = AESCipher(key)
-    print(outFile)
+#    print(outFile)
     global INT_STAT
-    if(reDirect==True):
-        if(1==1):
-            buff=b""
+    if(outFile!=None):
+        buff=b""
 #            print(buff)
-            msg=s.recv(1024)
+        msg=s.recv(1024)
 #            print(type(msg))
 #            print(msg)
 #            msg=msg.decode()
-            while(msg):
+        while(msg):
 #                print("Entered Loop")
 #                if(b'\n' not in msg):
 #                    buff+=msg
@@ -136,13 +154,16 @@ def recv(s,key, reDirect, outFile):
 #                    buff+= msg[:msg.index(b'\n')]
 #                    print(buff)
 #                    buff=msg[msg.index(b'\n'):]
-                buff=buff+msg
+            buff=buff+msg
 #                print(buff)
-                msg=s.recv(1024)
+            msg=s.recv(1024)
 #                print(msg)
-#            print(buff)
-            with open(outFile,"wb") as file:
-                file.write(buff)
+#        print(buff)
+        buff = crypt("dec_out",buff, key)
+#        print(buff)
+#        buff = buff.split(':-:')[0]
+        with open(outFile,"wb") as file:
+            file.write(buff)
 #            print(type(buffer))
 #            print(msg)
 #                msg=msg.decode()
@@ -200,19 +221,28 @@ def spawn(s,fpath,key):
                 output=(subprocess.check_output(fpath, stderr=subprocess.STDOUT, shell=True)).decode()
             except subprocess.CalledProcessError as e:
 #                output=("command "+str(e.cmd)+" returned with error (code:"+str(e.returncode)+"):"+str(e.output)+"")
+#                print("EXCEPTION")
                 output=str(e.output.decode())
 #                raise RuntimeError("command {} returned with error (code:{}):{}".format(e.cmd, e.returncode, e.output))
         else:
             while(True):
-                msg=s.recv(1024)
-                msg=msg.decode()
-                msg= crypt("dec", msg, key)
-#                print("message : {}".format(msg))
-                if(not msg):
-                    break
+#                hgh=subprocess.check_output('ls', stderr=subprocess.STDOUT)
+#                print(hgh)
                 try:
-                    output=subprocess.check_output(msg, stderr=subprocess.STDOUT, shell=True)
-                    output=output.decode()
+                    msg=s.recv(1024)
+#                    print(msg)
+                    msg=msg.decode()
+                    msg= crypt("dec", msg, key)
+                    msg=msg.decode()
+#                print(msg)
+#                print("message : {}".format(msg))
+                    if(not msg):
+                        break
+#                try:
+#                print(msg)
+                    output=subprocess.check_output(msg,stderr=subprocess.STDOUT)
+#                    output=output.decode()
+#                print(outp.decode()) 
                 except:
                     output="Failed to execute command...\n"
 #        output=subprocess.run(msg, stderr=subprocess.STDOUT, shell=True, capture_output=False)
@@ -229,12 +259,8 @@ def Interrupt(signum, frame):
     INT_STAT="STOP"
 
 
-def listen(port,fpath, qsec, Verbose, Redirect, outFile):
-    print(fpath)
-    if(Redirect == True):
-        reDirect=True
-    else:
-        reDirect=False
+def listen(port,fpath, qsec, Verbose, outFile):
+#    print(fpath)
     if(qsec!=None):
         signal.signal(signal.SIGALRM, Interrupt)
         signal.alarm(qsec)
@@ -254,13 +280,13 @@ def listen(port,fpath, qsec, Verbose, Redirect, outFile):
             print("\U0001F609",end=" ")
             print('{} established a connection through port {}'.format(conn[0],conn[1]))
         sen = threading.Thread(target=send, args=(stat,key,), daemon=False)
-        rec = threading.Thread(target=recv, args=(stat,key,reDirect,outFile), daemon=False)
+        rec = threading.Thread(target=recv, args=(stat,key,outFile), daemon=False)
     #    sen.daemon=True
     #    rec.daemon=True
         sen.start()
         rec.start()
     else:
-        print(fpath)
+#        print(fpath)
         print("Spawning a Shell...")
         rec=threading.Thread(target=spawn, args=(stat,fpath,key,),daemon=False)
         rec.start()
@@ -273,14 +299,22 @@ def connect(ip, inp_file, port, Verbose):
     key=Diffiehellman(s)
     if(inp_file==None):
         sen = threading.Thread(target=send, args=(s,key,), daemon=False)
-        rec = threading.Thread(target=recv, args=(s,key,False, None), daemon=False)
+        rec = threading.Thread(target=recv, args=(s,key, None), daemon=False)
         sen.start()
         rec.start()
     else:
         if(key):
-            s.send(inp_file)
+#            s.send(inp_file)
+            key = AESCipher(key)
+            inp_dec = inp_file
+            message = crypt("enc",inp_dec, key)
+#            print(type(message))
+#            message = message+":-:"+str(hashlib.md5(message.encode()).hexdigest())
+#            print(message.encode())
+            s.send(message.encode())
 
 def portScan(ip, port, Verbose):
+ 
     global active_ports
     active_ports={}
     start_time = time.time()

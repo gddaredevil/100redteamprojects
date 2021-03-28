@@ -46,11 +46,11 @@ def recv_msg(s):
 
 if __name__=='__main__':
 	prog_status="run"
-	host='127.0.0.1'
+	host='192.168.1.6'
 	port=7777
 
 	s= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.bind(('',port))
+	s.bind((host,port))
 
 	s.listen(5)
 

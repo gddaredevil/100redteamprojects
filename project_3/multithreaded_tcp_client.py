@@ -27,8 +27,10 @@ def send_msg(s):
 
 def recv_msg(s):
 	global prog_status
+	prog_status="run"
 	while(True):
-		if(prog_status =="run"):
+#		if(prog_status =="run"):
+		if(1==1):
 			msg=s.recv(1024)
 			if(msg):
 				msg=msg.decode()
@@ -41,10 +43,10 @@ def recv_msg(s):
 			break
 			exit(0)
 if __name__=='__main__':
+	global prog_status
 	prog_status="run"
-	host='127.0.0.1'
+	host='192.168.1.6'
 	port=7777
-
 	s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 	s.connect((host,port))

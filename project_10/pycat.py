@@ -88,7 +88,7 @@ def main():
             Verbose=False
         else:
             Redirect=False
-        pycat_util.listen(opts['port'],fpath, qsec, Verbose, Redirect,outFile)
+        pycat_util.listen(opts['port'],fpath, qsec, Verbose,outFile)
 
     #Connect
     Connect = True if opts['listen']==False and opts['execute']==None and opts['z']==False and opts['host_address']!=[] else False
