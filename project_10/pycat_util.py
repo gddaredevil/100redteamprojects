@@ -40,13 +40,10 @@ def diffieHellman(s):
             recvar+=buff
             buff=s.recv(1)
         else:
-#            buff=buff[:buff.index(b'\n')]
             recvar+=buff
             break
     recvar = recvar.decode()
-#    print(recvar)
     key = (int(recvar)**int_var)%P
-#    print(key)
     return(key)
 
 def Diffiehellman(s):
@@ -59,7 +56,6 @@ def Diffiehellman(s):
     var = (G**int_var)%P
     s.send((str(var)+"\n").encode())
     key=(int(recKey)**int_var)%P
-#    print(key)
     return(key)
 
 
@@ -71,18 +67,15 @@ def AESCipher(key):
 def padding(stat,text):
     global block_size
     if(stat=="pad"):
-#        print("Text : {}".format(text))
         bytes_to_pad= block_size - len(text) % block_size
         ascii_string = chr(bytes_to_pad)
         pad_str = str(ascii_string)*bytes_to_pad
-#        print("pad_str : {}".format(pad_str))
         if(isinstance(text, str)):
             final_str = text+pad_str
         elif(isinstance(text, bytes)):
             final_str=text+(pad_str.encode())
         return(final_str)
     elif(stat=="unpad"):
-#        text=text.decode()
         pad_char = text[-1]
         for i in range(1,len(text)):
             if(text[i]==pad_char):
